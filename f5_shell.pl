@@ -61,6 +61,10 @@ while (my $command = <STDIN>)
 	{
 		&get_active_partition;
 	}
+	elsif ($command eq 'list_virtual_servers')
+	{
+		&list_virtual_servers;
+	}
 	else
 	{
 		print "Error: Command not found\n";
@@ -183,6 +187,23 @@ sub create_pool
 {
 	my ($new_pool) = $_[0];
 	print "New Pool: $new_pool\n";
+}
+
+sub list_virtual_servers
+{
+	my ($vs_list) = SOAP::Lite
+		-> uri('urn:iControl:LocalLB/VirtualServer')
+		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	eval { $vs_list->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
+	$soapResponse = $vs_list->get_list();
+	
+	&checkResponse($soapResponse);
+	my ($virtual_server_list) = $soapResponse->result;
+	my (@virtual_servers) = @{$virtual_server_list};
+	foreach (@virtual_servers)
+	{
+		print "\t$_\n";
+	}
 }
 
 sub list_virtual_rules
