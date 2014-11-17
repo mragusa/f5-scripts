@@ -15,7 +15,20 @@ if (-e $password_file)
 	($user,$password) = split(/\s/, $login_creds[0]);
 } else {print "error in opening file\n";}
 
+my $help_message = q/
+		Commands:
+			login - login to specified server format: login server username password
+			system_information - display basic system information
+			list_partition - list system partitions
+			set_partition - set active partition
+			get_active_partition - display active partition
+			list_virtual_servers - display virtual servers in active partition
+			list_virtual_rules - list irules for specified virtual server
+/;
+
+
 print "F5 Interactive Shell\n";
+print "$help_message\n";
 print ">";
 
 while (my $command = <STDIN>)
@@ -71,6 +84,10 @@ while (my $command = <STDIN>)
 	elsif ($command eq 'list_rules')
 	{
 		&list_virtual_rules;
+	}
+	elsif ($command eq 'help')
+	{
+		print $help_message;
 	}
 	else
 	{
