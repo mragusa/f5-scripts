@@ -65,6 +65,10 @@ while (my $command = <STDIN>)
 	{
 		&list_virtual_servers;
 	}
+	elsif ($command eq 'list_rules')
+	{
+		&list_virtual_rules;
+	}
 	else
 	{
 		print "Error: Command not found\n";
@@ -216,8 +220,14 @@ sub list_virtual_rules
 		-> uri('urn:iControl:LocalLB/VirtualServer')
 		-> proxy("http://$server/iControl/iControlPortal.cgi");
 	eval { $vs_rule_list->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
-	$soapResponse = $vs_rule_list->get_rule(SOAP::Data->name('virtual_servers')->value($virtual_server));
+	$soapResponse = $vs_rule_list->get_rule(SOAP::Data->name('virtual_servers')->value([$virtual_server]));
 	&checkResponse($soapResponse);
-
-	print Dumper $soapResponse->result;
+	my ($vs_irules) = $soapResponse->result;
+	foreach my $irules (@{$vs_irules})
+	{
+		foreach (@{$irules})
+		{
+			print "\t$_->{rule_name}\n"
+		}
+	}
 }
