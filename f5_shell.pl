@@ -23,7 +23,7 @@ my $help_message = q/
 			set_partition - set active partition
 			get_active_partition - display active partition
 			list_virtual_servers - display virtual servers in active partition
-			list_virtual_rules - list irules for specified virtual server
+			list_rules- list irules for specified virtual server
 /;
 
 
