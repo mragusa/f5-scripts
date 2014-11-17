@@ -2,6 +2,7 @@
 
 use warnings;
 use strict;
+#use SOAP::Lite +debug => 'all', +trace => 'all';
 use SOAP::Lite;
 use Data::Dumper;
 
@@ -33,7 +34,7 @@ while (my $command = <STDIN>)
 			return $user => $password;
 		}
 		# define client proxy
-		$client = SOAP::Lite->proxy("http://$server/iControl/iControlPortal.cgi");
+		$client = SOAP::Lite->proxy("https://$server/iControl/iControlPortal.cgi", ssl_opts => [ verify_hostname => 0, debug => 1 ]);
 		# Grab current active partition
 		$partition = &get_active_partition;
 	}
