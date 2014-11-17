@@ -6,13 +6,13 @@ use SOAP::Lite;
 use Data::Dumper;
 
 my($soapResponse, $user, $password, $server, $partition);
-my $password_file = '~/.f5_login';
+my $password_file = "$ENV{HOME}/.f5_login";
 if (-e $password_file)
 {
-	open(LOGIN, "<", $password_file);
+	open(LOGIN, "<", $password_file) or warn $!;
 	my @login_creds = <LOGIN>;
-	($user,$password) = split(/,/, @login_creds);
-};
+	($user,$password) = split(/\s/, $login_creds[0]);
+} else {print "error in opening file\n";}
 
 print "F5 Interactive Shell\n";
 print ">";
@@ -23,7 +23,12 @@ while (my $command = <STDIN>)
 
 	if($command =~ m/^login/)
 	{
-		(undef, $server, $user, $password) = split(/\s/, $command);
+		if ($password_file)
+		{
+			(undef, $server) = split(/\s/, $command);
+		} else {
+			(undef, $server, $user, $password) = split(/\s/, $command);
+		}
 		sub SOAP::Transport::HTTP::Client::get_basic_credentials {
 			return $user => $password;
 		}
@@ -182,5 +187,16 @@ sub create_pool
 
 sub list_virtual_rules
 {
+	my ($virtual_server);
+	print "Enter virtual server name: ";
+	$virtual_server = <STDIN>;
+	chomp($virtual_server);
+	my ($vs_rule_list) = SOAP::Lite
+		-> uri('urn:iControl:LocalLB/VirtualServer')
+		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	eval { $vs_rule_list->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
+	$soapResponse = $vs_rule_list->get_rule(SOAP::Data->name('virtual_servers')->value($virtual_server));
+	&checkResponse($soapResponse);
 
+	print Dumper $soapResponse->result;
 }
