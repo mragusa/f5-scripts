@@ -5,7 +5,7 @@ use strict;
 use SOAP::Lite;
 use Data::Dumper;
 
-my($soapResponse, $user, $password, $server, $partition);
+my($client, $soapResponse, $user, $password, $server, $partition);
 my $password_file = "$ENV{HOME}/.f5_login";
 if (-e $password_file)
 {
@@ -32,7 +32,9 @@ while (my $command = <STDIN>)
 		sub SOAP::Transport::HTTP::Client::get_basic_credentials {
 			return $user => $password;
 		}
-
+		# define client proxy
+		$client = SOAP::Lite->proxy("http://$server/iControl/iControlPortal.cgi");
+		# Grab current active partition
 		$partition = &get_active_partition;
 	}
 	elsif ($command eq 'exit')
@@ -81,9 +83,10 @@ sub system_information
 	# Used for basic connectivity testing
 	# once user logs into the system, they run system_information and the basic info of the system should be displayed
 	# Refer to URL_HERE for more information and adding functionality.
-	my $SystemInfo = SOAP::Lite
-		-> uri('urn:iControl:System/SystemInfo')
-		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	#	my $SystemInfo = SOAP::Lite
+	#		-> uri('urn:iControl:System/SystemInfo')
+	#		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	my $SystemInfo = $client->uri('urn:iControl:System/SystemInfo');
 	# The line below is used to encode username and password with the http requests
 	eval { $SystemInfo->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
 
@@ -117,9 +120,7 @@ sub checkResponse()
 
 sub list_partition
 {
-	my $listPartition = SOAP::Lite
-		-> uri('urn:iControl:Management/Partition')
-		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	my ($listPartition) = $client->uri('urn:iControl:Management/Partition');
 	eval { $listPartition->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
 	$soapResponse = $listPartition->get_partition_list();
 	&checkResponse($soapResponse);
@@ -139,9 +140,7 @@ sub set_partition
 	chomp($partition);
 	print "Partition: $partition\n";
 
-	my $setPartition= SOAP::Lite
-		->uri('urn:iControl:Management/Partition')
-		->proxy("http://$server/iControl/iControlPortal.cgi");
+	my $setPartition= $client->uri('urn:iControl:Management/Partition');
 	eval { $setPartition->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
 	$soapResponse = $setPartition->set_active_partition(SOAP::Data->name('active_partition')->value($partition));
 	&checkResponse($soapResponse);
@@ -151,9 +150,7 @@ sub set_partition
 
 sub get_active_partition
 {
-	my ($activePartition) = SOAP::Lite
-		-> uri('urn:iControl:Management/Partition')
-		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	my ($activePartition) = $client->uri('urn:iControl:Management/Partition');
 	eval { $activePartition->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
 	$soapResponse = $activePartition->get_active_partition();
 	&checkResponse($soapResponse);
@@ -195,9 +192,7 @@ sub create_pool
 
 sub list_virtual_servers
 {
-	my ($vs_list) = SOAP::Lite
-		-> uri('urn:iControl:LocalLB/VirtualServer')
-		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	my ($vs_list) = $client->uri('urn:iControl:LocalLB/VirtualServer');
 	eval { $vs_list->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
 	$soapResponse = $vs_list->get_list();
 	
@@ -216,9 +211,7 @@ sub list_virtual_rules
 	print "Enter virtual server name: ";
 	$virtual_server = <STDIN>;
 	chomp($virtual_server);
-	my ($vs_rule_list) = SOAP::Lite
-		-> uri('urn:iControl:LocalLB/VirtualServer')
-		-> proxy("http://$server/iControl/iControlPortal.cgi");
+	my ($vs_rule_list) = $client->uri('urn:iControl:LocalLB/VirtualServer');
 	eval { $vs_rule_list->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
 	$soapResponse = $vs_rule_list->get_rule(SOAP::Data->name('virtual_servers')->value([$virtual_server]));
 	&checkResponse($soapResponse);
@@ -227,7 +220,7 @@ sub list_virtual_rules
 	{
 		foreach (@{$irules})
 		{
-			print "\t$_->{rule_name}\n"
+			print "\t$_->{priority} : $_->{rule_name}\n"
 		}
 	}
 }
