@@ -135,9 +135,16 @@ sub system_information
 	# System information is returned as an array of hashes
 	my (@system_information) = $soapResponse->result;
 	print "System Information:\n";
-	print "\tHostname: $system_information[0]->{host_name}\n";
-	print "\tSystem Name: $system_information[0]->{system_name}\n";
-	print "\tPlatform: $system_information[0]->{platform}\n";
+	foreach my $sysinfo (@system_information)
+	{
+		foreach my $keys (keys %{$sysinfo})
+		{
+			print "\t$keys: " . %{$sysinfo}->{$keys} . "\n";
+		}
+	}
+#	print "\tHostname: $system_information[0]->{host_name}\n";
+#	print "\tSystem Name: $system_information[0]->{system_name}\n";
+#	print "\tPlatform: $system_information[0]->{platform}\n";
 }
 
 sub checkResponse()
