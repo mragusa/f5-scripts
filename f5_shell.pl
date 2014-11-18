@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+# To do
+# add create virtual server code
+# add create pool code
+
 use warnings;
 use strict;
 #use SOAP::Lite +debug => 'all', +trace => 'all';
@@ -23,7 +27,9 @@ my $help_message = q/
 			set_partition - set active partition
 			get_active_partition - display active partition
 			list_virtual_servers - display virtual servers in active partition
-			list_rules- list irules for specified virtual server
+			list_rules - list irules for specified virtual server
+			add_rule - add irule to virtual server
+			help - print this menu
 /;
 
 
@@ -84,6 +90,14 @@ while (my $command = <STDIN>)
 	elsif ($command eq 'list_rules')
 	{
 		&list_virtual_rules;
+	}
+	elsif ($command eq 'add_rule')
+	{
+		&add_virtual_irule;
+	}
+	elsif ($command =~ /^del_rule/)
+	{
+		&del_virtual_irule;
 	}
 	elsif ($command eq 'help')
 	{
@@ -231,7 +245,7 @@ sub list_virtual_rules
 	chomp($virtual_server);
 	my ($vs_rule_list) = $client->uri('urn:iControl:LocalLB/VirtualServer');
 	eval { $vs_rule_list->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
-	$soapResponse = $vs_rule_list->get_rule(SOAP::Data->name('virtual_servers')->value([$virtual_server]));
+	$soapResponse = $vs_rule_list->get_rule(SOAP::Data->name('virtual_servers' => [$virtual_server]));
 	&checkResponse($soapResponse);
 	my ($vs_irules) = $soapResponse->result;
 	foreach my $irules (@{$vs_irules})
@@ -241,4 +255,39 @@ sub list_virtual_rules
 			print "\t$_->{priority} : $_->{rule_name}\n"
 		}
 	}
+}
+
+sub add_virtual_irule
+{
+	my (@rules, @rules_final, $virtual_server, $irule, $priority);
+	print "Enter virtual server name: ";
+	$virtual_server = <STDIN>;
+	chomp($virtual_server);
+	print "Enter irule: <must be full path> ";
+	$irule = <STDIN>;
+	chomp($irule);
+	print "Priority: ";
+	$priority = <STDIN>;
+	chomp($priority);
+	my $VSIRule = {
+		rule_name => $irule,
+		priority => $priority,
+	};
+	# Irules are hashes inside of arrays inside of an array
+	push(@rules, $VSIRule);
+	push(@rules_final, [@rules]);
+	my ($add_virtual_irule) = $client->uri('urn:iControl:LocalLB/VirtualServer');
+	eval { $add_virtual_irule->transport->http_request->header ( 'Authorization' => 'Basic ' . MIME::Base64::encode("$user:$password", '')); };
+	$soapResponse = $add_virtual_irule->add_rule(
+		SOAP::Data->name('virtual_servers' => [$virtual_server]),
+		SOAP::Data->name('rules' => [@rules_final]),
+	);
+	&checkResponse($soapResponse);
+
+	print Dumper $soapResponse->result;
+}
+
+sub del_virtual_irule
+{
+	
 }
