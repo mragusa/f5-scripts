@@ -125,12 +125,15 @@ sub system_information
 	$soapResponse = $SystemInfo->get_version();
 	my ($version) = $soapResponse->result;
 	print "Version: $version\n";
+
 	$soapResponse = $SystemInfo->get_system_id();
 	my ($system_id) = $soapResponse->result;
 	print "System ID: $system_id\n";
+
 	$soapResponse = $SystemInfo->get_uptime();
 	my (@uptime) = $soapResponse->result;
 	printf("Uptime: %ld\n", $uptime[0]);
+
 	$soapResponse = $SystemInfo->get_system_information();
 	# System information is returned as an array of hashes
 	my (@system_information) = $soapResponse->result;
@@ -142,9 +145,6 @@ sub system_information
 			print "\t$keys: " . %{$sysinfo}->{$keys} . "\n";
 		}
 	}
-#	print "\tHostname: $system_information[0]->{host_name}\n";
-#	print "\tSystem Name: $system_information[0]->{system_name}\n";
-#	print "\tPlatform: $system_information[0]->{platform}\n";
 }
 
 sub checkResponse()
